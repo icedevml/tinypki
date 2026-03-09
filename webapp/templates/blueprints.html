@@ -1,0 +1,54 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Blueprints</h1>
+</div>
+
+<div class="mb-3">
+    <a class="btn btn-primary" href="/ui/blueprints/add">Create blueprint</a>
+</div>
+
+{% if blueprints %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Provisioner</th>
+            <th>Cert validity</th>
+            <th>Key algorithm</th>
+            <th>Generation flow</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for o in blueprints %}
+        <tr>
+            <td>
+                {{ o.name }}
+            </td>
+            <td>{{ o.provisioner_name }}</td>
+            <td>{{ o.not_after_days }} day(s)</td>
+            <td>{{ o.key_algorithm }}</td>
+            <td>
+                {% if o.keygen_flow.name == "CLIENT_SIDE" %}
+                <span class="badge text-bg-secondary">Client-side</span>
+                {% elif o.keygen_flow.name == "SERVER_SIDE" %}
+                <span class="badge text-bg-warning">Server-side</span>
+                {% endif %}
+            </td>
+            <td>
+                <a class="btn btn-secondary btn-sm" href="/ui/blueprints/edit/{{ o.name }}">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="no-results">
+    <p>No blueprints found.</p>
+</div>
+{% endif %}
+{% endblock %}

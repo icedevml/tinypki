@@ -1,0 +1,18 @@
+services:
+  caddy:
+    build: caddy
+    hostname: ${TINYPKI_HOSTNAME}
+    restart: unless-stopped
+    env_file:
+      - path: ./.env
+      - path: ./env/caddy.env
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "9080:80"
+      - "9443:443"
+      - "9443:443/udp"
+    volumes:
+      - caddy_data:/data
+volumes:
+  caddy_data:

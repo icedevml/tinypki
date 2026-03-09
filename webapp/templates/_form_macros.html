@@ -1,0 +1,46 @@
+{% macro render_errors(form) %}
+{% for field, errors in form.errors.items() %}
+{% for error in errors %}
+<div class="alert alert-danger">{{ field }}: {{ error }}</div>
+{% endfor %}
+{% endfor %}
+{% endmacro %}
+
+{% macro render_field(field) %}
+{% if field.widget.__class__.__name__ == 'HiddenInput' %}
+{{ field() }}
+
+{% for error in field.errors %}
+<div class="invalid-feedback">
+    {{ error }}
+</div>
+{% endfor %}
+{% else %}
+<div class="mb-3">
+    {% if field.widget.__class__.__name__ == 'Select' %}
+    <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
+    {{ field(class="form-select" + (" is-invalid" if field.errors else ""), **kwargs) }}
+
+    {% elif field.widget.__class__.__name__ in ['CheckboxInput'] %}
+    <div class="form-check">
+        {{ field(class="form-check-input" + (" is-invalid" if field.errors else ""), **kwargs) }}
+        <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
+    </div>
+
+    {% elif field.widget.__class__.__name__ == 'TextArea' %}
+    <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
+    {{ field(class="form-control" + (" is-invalid" if field.errors else ""), rows=4, **kwargs) }}
+
+    {% else %}
+    <label class="form-label" for="{{ field.id }}">{{ field.label.text }}</label>
+    {{ field(class="form-control" + (" is-invalid" if field.errors else ""), **kwargs) }}
+    {% endif %}
+
+    {% for error in field.errors %}
+    <div class="invalid-feedback">
+        {{ error }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,36 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Blueprints</h1>
+</div>
+
+<h2 class="h3">Add Blueprint</h2>
+<div style="max-width: 400px;">
+    <form action="" method="POST">
+        {{ render_errors(form) }}
+        {{ form.csrf_token }}
+
+        {{ render_field(form.name) }}
+        {{ render_field(form.provisioner_name) }}
+        {{ render_field(form.invitation_validity_days) }}
+        <p class="text-muted">
+            How many days the invitation code is valid after the invitation is issued.
+        </p>
+        {{ render_field(form.not_before) }}
+        <p class="text-muted">
+            The issued certificate's "not before" time will be backdated by the specified amount of time to avoid
+            clock skew issues.
+        </p>
+        {{ render_field(form.not_after_days) }}
+        <p class="text-muted">
+            How many days the certificate will be valid after collected by the user redeeming the invitation.
+        </p>
+        {{ render_field(form.key_algorithm) }}
+        {{ render_field(form.keygen_flow) }}
+        {{ render_field(form.subject_mode) }}
+
+        <button class="btn btn-primary" type="submit">Create</button>
+    </form>
+</div>
+{% endblock %}

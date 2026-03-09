@@ -1,0 +1,37 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Invitations</h1>
+</div>
+
+<h2 class="h3">Create Invitation</h2>
+<div style="max-width: 400px;">
+    <form action="" method="POST">
+        {{ render_errors(form) }}
+        {{ form.csrf_token }}
+
+        <input name="submit_nonce" type="hidden" value="{{ submit_nonce }}">
+        <input name="blueprint_name" type="hidden" value="{{ blueprint.name }}">
+
+        {% if form.subject_name %}
+        {{ render_field(form.subject_name) }}
+        {% else %}
+        {{ render_field(form.subject_common_name) }}
+        {{ render_field(form.subject_alt_names) }}
+        {% endif %}
+
+        {{ render_field(form.invitation_validity_days) }}
+        <p class="text-muted">
+            How many days the user has to redeem this invitation for a certificate.
+        </p>
+        {{ render_field(form.not_after_days) }}
+        <p class="text-muted">
+            Specifies how many days the certificate will be valid after issuance.
+            The certificate will be issued once the user redeems their invitation.
+        </p>
+
+        <button class="btn btn-primary" type="submit">Create</button>
+    </form>
+</div>
+{% endblock %}

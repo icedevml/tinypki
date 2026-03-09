@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+{%- from "_form_macros.html" import render_errors, render_field -%}
+<html data-bs-theme="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>TinyPKI</title>
+
+    <link href="/public/static/css/bootstrap/5.3.8/bootstrap.min.css" rel="stylesheet">
+    <link href="/public/static/css/bootstrap-icons/1.13.1/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/public/static/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+<header class="navbar sticky-top bg-dark flex-md-nowrap p-0 shadow" data-bs-theme="dark"><a
+        class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" href="#">TinyPKI</a>
+    <ul class="navbar-nav flex-row d-md-none">
+        <li class="nav-item text-nowrap">
+            <button aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation"
+                    class="nav-link px-3 text-white" data-bs-target="#sidebarMenu" data-bs-toggle="offcanvas"
+                    type="button">
+                <i class="bi bi-list"></i>
+            </button>
+        </li>
+    </ul>
+</header>
+{% block body %}
+{% endblock %}
+<script integrity="sha256-5P1JGBOIxI7FBAvT/mb1fCnI5n/NhQKzNUuW7Hq0fMc="
+        src="/public/static/js/bootstrap/5.3.8/bootstrap.bundle.min.js"></script>
+</body>
+</html>

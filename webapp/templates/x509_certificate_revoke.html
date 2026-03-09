@@ -1,0 +1,46 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">X.509 Certificate</h1>
+</div>
+
+<h2 class="h3">Certificate to be revoked</h2>
+<table class="table table-striped table-bordered">
+    <tr>
+        <th>Serial number</th>
+        <td class="mono truncate">{{ cert.serial_no }}</td>
+    </tr>
+    <tr>
+        <th>Fingerprint (SHA-256)</th>
+        <td class="mono truncate">{{ cert.fingerprint_sha256 }}</td>
+    </tr>
+    <tr>
+        <th>Subject's X.509 Name</th>
+        <td class="mono">{{ cert.subject_name }}</td>
+    </tr>
+    <tr>
+        <th>Subject alternative names (SAN)</th>
+        <td class="mono">
+            {% for subject_alt_name in cert.subject_alt_names %}
+            {{ subject_alt_name }}<br/>
+            {% endfor %}
+        </td>
+    </tr>
+</table>
+
+<div style="max-width: 400px;">
+    <h2 class="h3">Revocation Form</h2>
+    <form action="" method="POST">
+        {{ render_errors(form) }}
+        {{ form.csrf_token }}
+
+        <input name="serial_no" type="hidden" value="{{ cert.serial_no }}">
+
+        {{ render_field(form.reason) }}
+        {{ render_field(form.confirm_serial_no) }}
+
+        <button class="btn btn-danger" name="action" type="submit" value="revoke_certificate">Revoke</button>
+    </form>
+</div>
+{% endblock %}

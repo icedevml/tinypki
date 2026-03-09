@@ -1,0 +1,8 @@
+FROM python:3.14.3-alpine3.23
+RUN apk add build-base libpq libpq-dev
+WORKDIR /app
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+COPY ./ /app
+CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "8080"]
+

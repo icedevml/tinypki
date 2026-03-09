@@ -1,0 +1,118 @@
+{% extends "_public_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Redeem invitation</h1>
+</div>
+
+<div style="max-width: 400px;">
+    <p>Found invitation with the following details:</p>
+    <table class="table table-striped table-bordered">
+        <tr>
+            <th>Subject name</th>
+            <td>
+                <code>{{ invitation.subject_common_name }}</code>
+            </td>
+        </tr>
+        <tr>
+            <th>Subject alt. names</th>
+            <td>
+                {% for san in invitation.subject_alt_names %}
+                {{ "<br>"|safe if not loop.first }}
+                <code>{{ san }}</code>
+                {% endfor %}
+            </td>
+        </tr>
+        <tr>
+            <th>Cert. validity</th>
+            <td>{{ invitation.not_after_days }} day(s)</td>
+        </tr>
+    </table>
+
+    <div id="jsErrorAlert" style="display: none;">
+        <div class="alert alert-danger">
+            <p>
+                There was an error when we were trying to obtain your certificate.
+            </p>
+            <p>
+                Please share the details below with the system administrator, and then please try again.
+            </p>
+            <p>
+                <strong>JavaScript Error:</strong>
+            </p>
+            <pre id="jsErrorAlertStack" style="font-size: 11px; white-space: pre-wrap; word-break: break-all;"></pre>
+        </div>
+    </div>
+
+    <div id="noJSError">
+        <div class="alert alert-danger">JavaScript support is enabled to proceed further.</div>
+    </div>
+    <div id="step0" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Initializing</h2>
+        <p>
+            Please wait, initializing...
+        </p>
+    </div>
+    <div id="step1" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 1</h2>
+        <p>
+            Your private key will be generated <strong><span id="keyGenFlowType"></span></strong>.
+        </p>
+        <p>
+            Click on the button below to request a certificate.
+        </p>
+
+        <button class="btn btn-primary" id="btnRequestCertificate" type="submit">Request certificate</button>
+    </div>
+    <div id="step2" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 2</h2>
+        <p>
+            Copy the PKCS#12 password to the clipboard.
+            Do not persist that password anywhere.
+        </p>
+        <div class="mt-5 mb-5">
+            <code id="pkcs12Password" style="font-size: 2rem; font-weight: bold;"></code>
+        </div>
+
+        <button class="btn btn-secondary" id="btnPasswordCopied">I've copied the password to my clipboard</button>
+    </div>
+    <div id="step3" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 3</h2>
+        <p>
+            Click on the button below to download your PKCS#12 container file (certificate and private key).
+        </p>
+
+        <button class="btn btn-primary" id="btnDownloadPKCS12">Download PKCS#12</button>
+    </div>
+    <div id="step4" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 4</h2>
+        <p>
+            Your download should start shortly.
+        </p>
+        <p>
+            <strong>Open the downloaded file to proceed with installation.</strong>
+        </p>
+        <p>
+            When prompted for a password, paste what you've previously copied.
+        </p>
+
+        <button class="btn btn-secondary" id="btnDownloadPKCS12Again">Download PKCS#12 again</button>
+    </div>
+</div>
+<script src="/public/static/js/redeem_invitation_step2_pre.js"></script>
+<!--
+tinypki-csr library: client-side CSR and PKCS#12 generator
+
+Source code:
+https://github.com/icedevml/tinypki-csr/releases/tag/v2.0.0
+Build attestation:
+https://github.com/icedevml/tinypki-csr/attestations/19888233
+-->
+<script crossorigin="anonymous"
+        integrity="sha256-BBoA0dg4HUvGFIkavriGVtL0uYMcONP2NrAyp99lZ3I="
+        src="/public/static/js/tinypki-csr/v2.0.0/tinypki-csr.js"></script>
+<script>
+    const FRONTEND_CFG = {{ frontend_cfg|tojson(4) }};
+</script>
+<script src="/public/static/js/redeem_invitation_step2.js"></script>
+{% endblock %}

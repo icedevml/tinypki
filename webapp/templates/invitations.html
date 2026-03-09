@@ -1,0 +1,103 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Invitations</h1>
+</div>
+
+<div class="mb-3">
+    {% for blueprint in blueprints %}
+    <a class="btn btn-primary" href="/ui/invitations/add/{{ blueprint.name }}">Invite {{ blueprint.name }}</a>
+    {% endfor %}
+
+    {% if not blueprints %}
+    <div class="alert alert-danger">
+        You can not create new invitations until no Blueprints are defined.
+    </div>
+    {% endif %}
+</div>
+
+<p>
+    Invitations are an easy way to onboard users with the client certificates issued by your CA.
+    After the invitation is created, you will receive the activation code and the URL where it could be redeemed
+    for a certificate. This information has to be sent to the end user, so they could walk through the
+    self-service issuance process.
+</p>
+
+{% if invitations %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Common Name</th>
+            <th>SANs</th>
+            <th>Status</th>
+            <th>Invitation expires</th>
+            <th>Cert validity</th>
+            <th>Blueprint</th>
+            <th>Issued serial</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for o in invitations %}
+        <tr>
+            <td>{{ o.id }}</td>
+            <td>
+                {{ o.subject_common_name }}
+            </td>
+            <td>
+                {% if o.subject_alt_names %}
+                {% for san in o.subject_alt_names %}
+                <span class="badge rounded-pill text-bg-secondary">{{ san }}</span>
+                {% endfor %}
+                {% else %}
+                <span class="empty-value">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if o.status.name == "LOCKED" %}
+                <span class="badge text-bg-warning">Locked</span>
+                {% elif o.status.name == "EXCEPTION" %}
+                <span class="badge text-bg-danger" title="{{ o.error_message }}">Exception</span>
+                {% elif o.status.name == "ISSUED" %}
+                <span class="badge text-bg-success">Issued</span>
+                {% else %}
+                {% if now >= o.expires_at %}
+                <span class="badge text-bg-warning">Expired</span>
+                {% elif o.status.name == "CREATED" %}
+                <span class="badge text-bg-secondary">Created</span>
+                {% elif o.status.name == "OPENED" %}
+                <span class="badge text-bg-secondary">Opened</span>
+                {% else %}
+                <span class="badge text-bg-danger">{{ o.status }}</span>
+                {% endif %}
+                {% endif %}
+            </td>
+            <td>{{ o.expires_at }}</td>
+            <td>{{ o.not_after_days }} day(s)</td>
+            <td>{{ o.blueprint_name }}</td>
+            {% if o.serial_no %}
+            <td class="mono truncate" title="{{ o.serial_no }}">
+                <a href="/ui/x509/certificate/{{ o.serial_no }}" style="text-decoration: none;">{{ o.serial_no[:16] }}</a>...
+            </td>
+            {% else %}
+            <td>—</td>
+            {% endif %}
+            <td>
+                {% if o.status.name == "CREATED" or o.status.name == "OPENED" %}
+                <a class="btn btn-danger btn-sm" href="/ui/invitations/{{ o.id }}/delete">Delete</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="no-results">
+    <p>No invitations found.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+services:
+  ca:
+    build: ca
+    ports:
+      - "127.0.0.1:9000:9000"
+    env_file:
+      - path: ./env/db.env
+      - path: ./env/stepca.env
+    volumes:
+      - step_data:/home/step
+      - "./env/stepca_password:/run/secrets/password:ro"
+  db:
+    image: ghcr.io/pgmq/pg18-pgmq:v1.10.1
+    restart: always
+    shm_size: 128mb
+    env_file:
+      - path: ./env/db.env
+    volumes:
+      - "./dbinit:/docker-entrypoint-initdb.d:ro"
+volumes:
+  step_data:

@@ -1,0 +1,56 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Provisioners</h1>
+</div>
+
+<div class="mb-3">
+    <a class="btn btn-primary" href="/ui/provisioners/add">Add provisioner</a>
+</div>
+
+<p>
+    List of the JWK Provisioners that TinyPKI holds credentials for. Credentials are stored in the database,
+    encrypted at-rest. TinyPKI must be able to access at least one provisioner to be able to perform non-readonly
+    actions, such as certificate revocation or generating an invitation (a certificate collection link).
+</p>
+
+{% if provisioners %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Default</th>
+            <th>Registered at</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for o in provisioners %}
+        <tr>
+            <td class="truncate">
+                {{ o.name }}
+            </td>
+            <td>
+                {% if o.is_default %}
+                <span class="badge text-bg-primary">Default</span>
+                {% endif %}
+            </td>
+            <td>
+                {{ o.registered_at }}
+            </td>
+            <td>
+                <a class="btn btn-danger btn-sm" href="/ui/provisioners/{{ o.name }}/delete">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="no-results">
+    <p>No provisioners found.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "_public_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Redeem invitation</h1>
+</div>
+
+<div style="max-width: 400px;">
+    <form action="" method="POST">
+        {{ render_errors(form) }}
+        {{ form.csrf_token }}
+
+        {{ render_field(form.redeem_code, autocomplete="off") }}
+
+        <button class="btn btn-primary" type="submit">Validate</button>
+    </form>
+</div>
+{% endblock %}

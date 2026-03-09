@@ -1,0 +1,131 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">X.509 Certificates</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <form action="" class="d-flex" method="GET" role="search">
+            <input class="form-control me-2 search-input" name="search" type="search" value="{{ search }}">
+            <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+    </div>
+</div>
+
+{% if certificates %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th style="width: 230px;">Serial Number</th>
+            <th>Subject Name</th>
+            <th>Subject Alt Names</th>
+            <th>Not Before</th>
+            <th>Not After</th>
+            <th>Status</th>
+            <th>Key Usage</th>
+            <th>Ext Key Usage</th>
+            <th>Provisioner</th>
+            <th>Issuer</th>
+            <th>Fingerprint (SHA256)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for cert in certificates %}
+        <tr>
+            <td class="mono truncate">
+                <a href="/ui/x509/certificate/{{ cert.serial_no }}" style="text-decoration: none;">{{ cert.serial_no
+                    }}</a>
+            </td>
+            <td class="truncate" title="{{ cert.subject_name or '' }}">
+                {{ cert.subject_name or '—' }}
+            </td>
+            <td>
+                {% if cert.subject_alt_names %}
+                {% for san in cert.subject_alt_names %}
+                <span class="badge rounded-pill text-bg-secondary">{{ san }}</span>
+                {% endfor %}
+                {% else %}
+                <span class="empty-value">—</span>
+                {% endif %}
+            </td>
+            <td class="mono">
+                {{ cert.time_not_before.strftime('%Y-%m-%d %H:%M') }}
+            </td>
+            <td class="mono">
+                {{ cert.time_not_after.strftime('%Y-%m-%d %H:%M') }}
+            </td>
+            <td>
+                {% if cert.x509_cert_revocation %}
+                <span class="badge rounded-pill text-bg-danger">Revoked</span>
+
+                {% if now > cert.time_not_after %}
+                <span class="badge rounded-pill text-bg-danger">Expired</span>
+                {% elif now < cert.time_not_before %}
+                <span class="badge rounded-pill text-bg-warning">Not yet valid</span>
+                {% else %}
+                <span class="badge rounded-pill text-bg-warning">Valid</span>
+                {% endif %}
+                {% else %}
+                {% if now > cert.time_not_after %}
+                <span class="badge rounded-pill text-bg-danger">Expired</span>
+                {% elif now < cert.time_not_before %}
+                <span class="badge rounded-pill text-bg-warning">Not yet valid</span>
+                {% else %}
+                <span class="badge rounded-pill text-bg-success">Valid</span>
+                {% endif %}
+                {% endif %}
+            </td>
+            <td>
+                {% if cert.key_usage %}
+                {% for ku in cert.key_usage %}
+                <span class="badge rounded-pill text-bg-secondary">{{ ku }}</span>
+                {% endfor %}
+                {% else %}
+                <span class="empty-value">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if cert.ext_key_usage %}
+                {% for eku in cert.ext_key_usage %}
+                <span class="badge rounded-pill text-bg-secondary">{{ eku }}</span>
+                {% endfor %}
+                {% else %}
+                <span class="empty-value">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {{ cert.x509_cert_data.provisioner_name }}
+            </td>
+            <td class="truncate" title="{{ cert.issuer_name }}">
+                {{ cert.issuer_name }}
+            </td>
+            <td class="mono truncate" title="{{ cert.fingerprint_sha256 }}">
+                {{ cert.fingerprint_sha256[:16] }}...
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<nav>
+    <ul class="pagination flex-wrap">
+        <li class="page-item {% if page_no == 1 %}disabled{% endif %}"><a class="page-link"
+                                                                          href="?cutoff={{ cutoff }}&search={{ search }}&page_no={{ page_no - 1 }}">Previous</a>
+        </li>
+        {% for i in range(1, page_count+1) %}
+        <li class="page-item {% if page_no == i %}active{% endif %}"><a class="page-link"
+                                                                        href="?cutoff={{ cutoff }}&search={{ search }}&page_no={{ i }}">{{
+            i }}</a></li>
+        {% endfor %}
+        <li class="page-item {% if page_no == page_count %}disabled{% endif %}"><a class="page-link"
+                                                                                   href="?cutoff={{ cutoff }}&search={{ search }}&page_no={{ page_no + 1 }}">Next</a>
+        </li>
+    </ul>
+</nav>
+{% else %}
+<div class="no-results">
+    <p>No certificates found.</p>
+</div>
+{% endif %}
+{% endblock %}

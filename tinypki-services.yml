@@ -1,0 +1,20 @@
+services:
+  webapp:
+    restart: unless-stopped
+    build:
+      context: webapp
+      dockerfile: Dockerfile.webapp
+    env_file:
+      - path: ./env/db.env
+      - path: ./env/tinypki.env
+      - path: ./env/caddy.env
+    volumes:
+      - "./env/stepca_password:/run/secrets/password:ro"
+  indexer:
+    restart: unless-stopped
+    build:
+      context: webapp
+      dockerfile: Dockerfile.indexer
+    env_file:
+      - path: ./env/db.env
+      - path: ./env/tinypki.env

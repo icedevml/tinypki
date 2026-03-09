@@ -1,0 +1,50 @@
+{% extends "_admin_layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Invitations</h1>
+</div>
+
+<h2 class="h3">Create Invitation</h2>
+<div style="max-width: 400px;">
+    <p>
+        Invitation has been created.
+    </p>
+    <p>
+        Please communicate the following details to the user, so to make him able to redeem the invitation
+        for the certificate.
+    </p>
+    <p>
+        <strong>Subject Common Name (CN):</strong> <code>{{ subject_common_name }}</code><br>
+        <strong>Subject Alternative Names (SANS):</strong> {% for san in subject_alt_names %}
+        {% if not loop.first %}, {% endif %}<code>{{ san }}</code>
+        {% endfor %}
+    </p>
+    <div class="mt-4">
+        <p>
+            <strong>Redeem Code:</strong>
+        </p>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <code style="font-size: 1.25rem;">{{ redeem_code }}</code>
+        </div>
+    </div>
+    <div class="mt-4">
+        <p>
+            <strong>Redeem URL:</strong>
+        </p>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <a href="about:blank" id="redeem_anchor" style="text-decoration: none;" target="_blank">
+                <code id="redeem_url"></code></a>
+        </div>
+    </div>
+    <script>
+        const redeemURL = window.location.protocol + '//' + window.location.host + '/code';
+        document.getElementById("redeem_url").innerText = redeemURL;
+        document.getElementById("redeem_anchor").href = redeemURL;
+    </script>
+</div>
+{% endblock %}
