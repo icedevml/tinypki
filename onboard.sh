@@ -39,4 +39,5 @@ echo "[#] You will need to provide these details in the TinyPKI dashboard 'Provi
 echo "--------------------------------------------------------------------------"
 echo ""
 
+rm -f /tmp/tinypki_provisioner_password
 echo "[!] All done!"
