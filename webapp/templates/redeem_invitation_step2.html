@@ -108,8 +108,11 @@ https://github.com/icedevml/tinypki-csr/releases/tag/v2.0.0
 Build attestation:
 https://github.com/icedevml/tinypki-csr/attestations/19888233
 -->
+<!-- Two hashes, one for LF line endings and the other for CRLF -->
 <script crossorigin="anonymous"
-        integrity="sha256-BBoA0dg4HUvGFIkavriGVtL0uYMcONP2NrAyp99lZ3I="
+        integrity="
+            sha256-BBoA0dg4HUvGFIkavriGVtL0uYMcONP2NrAyp99lZ3I=
+            sha256-k8A/x3jVgUvyDsG6x6hZ1EM0Q/ascHwkhk3/g3PyI3A="
         src="/public/static/js/tinypki-csr/v2.0.0/tinypki-csr.js"></script>
 <script>
     const FRONTEND_CFG = {{ frontend_cfg|tojson(4) }};
