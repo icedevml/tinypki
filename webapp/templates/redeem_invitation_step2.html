@@ -79,13 +79,30 @@
     <div id="step3" style="display: none;">
         <h2 class="h3 pt-2 pb-2">Step 3</h2>
         <p>
+            Paste the password from the previous step to verify:
+        </p>
+        <div class="mb-3">
+            <label for="verifyPasswordInput" class="form-label">PKCS#12 password:</label>
+            <input type="password" class="form-control" id="verifyPasswordInput" placeholder="">
+        </div>
+
+        <div class="mb-1">
+            <button class="btn btn-primary" id="btnPasswordVerify">Verify password</button>
+        </div>
+        <div class="mb-1">
+            <button class="btn btn-secondary" id="btnDisplayPasswordAgain">Display the password again</button>
+        </div>
+    </div>
+    <div id="step4" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 4</h2>
+        <p>
             Click on the button below to download your PKCS#12 container file (certificate and private key).
         </p>
 
         <button class="btn btn-primary" id="btnDownloadPKCS12">Download PKCS#12</button>
     </div>
-    <div id="step4" style="display: none;">
-        <h2 class="h3 pt-2 pb-2">Step 4</h2>
+    <div id="step5" style="display: none;">
+        <h2 class="h3 pt-2 pb-2">Step 5</h2>
         <p>
             Your download should start shortly.
         </p>

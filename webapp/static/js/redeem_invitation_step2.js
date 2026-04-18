@@ -146,7 +146,7 @@ window.addEventListener("load", () => {
     }
 
     const setUIStep = (stepNo) => {
-        for (let i = 0; i <= 4; i++) {
+        for (let i = 0; i <= 5; i++) {
             document.getElementById("step" + i).style.display = 'none';
         }
 
@@ -169,14 +169,33 @@ window.addEventListener("load", () => {
     }
 
     const btnPasswordCopied = () => {
-        document.getElementById("btnPasswordCopied").disabled = true;
+        document.getElementById("verifyPasswordInput").value = "";
+        setUIStep(3);
+    }
+
+    const btnPasswordVerify = () => {
+        const enteredPassword = document.getElementById("verifyPasswordInput").value;
+        const realPassword = document.getElementById("pkcs12Password").innerText;
+
+        if (enteredPassword !== realPassword) {
+            alert("Incorrect password was entered. Please copy the password again.");
+            document.getElementById("btnPasswordCopied").disabled = false;
+            setUIStep(2);
+            return;
+        }
+
+        document.getElementById("btnPasswordVerify").disabled = true;
         document.getElementById("btnDownloadPKCS12").disabled = true;
 
-        setUIStep(3);
+        setUIStep(4);
 
         setTimeout(function () {
             document.getElementById("btnDownloadPKCS12").disabled = false;
         }, 1500);
+    }
+
+    const btnDisplayPasswordAgain = () => {
+        setUIStep(2);
     }
 
     const btnDownloadPKCS12 = () => {
@@ -250,6 +269,13 @@ window.addEventListener("load", () => {
 
         document.getElementById("btnRequestCertificate").addEventListener("click", btnRequestCertificate);
         document.getElementById("btnPasswordCopied").addEventListener("click", btnPasswordCopied);
+        document.getElementById("btnPasswordVerify").addEventListener("click", btnPasswordVerify);
+        document.getElementById("btnDisplayPasswordAgain").addEventListener("click", btnDisplayPasswordAgain);
+        document.getElementById("verifyPasswordInput").addEventListener("keydown", (event) => {
+            if (event.key === 'Enter') {
+                btnPasswordVerify();
+            }
+        });
         document.getElementById("btnDownloadPKCS12").addEventListener("click", btnDownloadPKCS12);
         document.getElementById("btnDownloadPKCS12Again").addEventListener("click", btnDownloadPKCS12);
 
