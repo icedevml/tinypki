@@ -40,9 +40,9 @@ class BaseBlueprintForm(StarletteForm):
         'Subject mode',
         validators=[DataRequired()],
         choices=[
-            ("DEFAULT", "Manually set CN and Subject Alternative Names"),
-            ("SIMPLE_DNS", "Only allow a single DNS SAN and propagate it to CN"),
-            ("SIMPLE_EMAIL", "Only allow a single e-mail SAN and propagate it to CN"),
+            ("DEFAULT", "Manually enter the Common Name and DNS names for each certificate"),
+            ("SIMPLE_DNS", "Every certificate will contain a single DNS name"),
+            ("SIMPLE_EMAIL", "Every certificate will contain a single e-mail"),
         ],
         default="SIMPLE_EMAIL",
         coerce=SubjectMode.coerce,
