@@ -2,7 +2,6 @@ FROM python:3.14.3-alpine3.23
 RUN apk add build-base libpq libpq-dev
 WORKDIR /app
 COPY ./pyproject.toml /app/pyproject.toml
-RUN pip install .
+RUN pip install /app
 COPY ./ /app
-CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "8080"]
-
+CMD ["fastapi", "run", "tinypki/main.py", "--proxy-headers", "--port", "8080"]

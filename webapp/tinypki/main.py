@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from datetime import timezone, timedelta
 from urllib.parse import unquote
+from pathlib import Path
 
 from aiocache import cached
 from cryptography.hazmat.primitives._serialization import Encoding
@@ -191,7 +192,7 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-app.mount("/public/static", StaticFiles(directory="static"), name="static")
+app.mount("/public/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

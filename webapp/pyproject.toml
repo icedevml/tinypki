@@ -31,9 +31,13 @@ Homepage = "https://github.com/icedevml/tinypki"
 Issues = "https://github.com/icedevml/tinypki/issues"
 Repository = "https://github.com/icedevml/tinypki.git"
 
+[project.scripts]
+tinypki-web = "tinypki.main:main"
+tinypki-indexer = "tinypki.indexer:run"
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools.package-data]
+tinypki = ["templates/**/*.html", "static/**/*"]

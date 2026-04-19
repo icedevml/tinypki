@@ -1,4 +1,5 @@
 from typing import Annotated
+from pathlib import Path
 
 from fastapi import Depends
 from sqlalchemy import URL, create_engine
@@ -13,7 +14,7 @@ def get_session():
         yield session
 
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 SessionDep = Annotated[Session, Depends(get_session)]
 

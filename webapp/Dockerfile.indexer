@@ -1,7 +1,7 @@
 FROM python:3.14.3-alpine3.23
 RUN apk add build-base libpq libpq-dev
-WORKDIR /
+WORKDIR /app
 COPY ./pyproject.toml /app/pyproject.toml
 RUN pip install /app
 COPY ./ /app
-CMD ["python", "-u", "-m", "app.indexer"]
+CMD ["python", "-u", "-m", "tinypki.indexer"]
