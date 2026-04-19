@@ -46,7 +46,7 @@ Finally:
 > [!TIP]
 > Your may need to restart the browser before your new certificates are correctly recognized.
 
-#0## Open TinyPKI dashboard
+## Open TinyPKI dashboard
 
 1. Execute the following command to bind `tinypki.home` domain to localhost:
    ```
