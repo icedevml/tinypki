@@ -1,0 +1,39 @@
+[project]
+name = "tinypki"
+version = "0.1.0"
+authors = [
+  {name = "Michał Leszczyński", email = "ml@icedev.pl"},
+]
+dependencies = [
+  "fastapi[standard]==0.129.0",
+  "jinja2==3.1.6",
+  "pgmq==1.0.5",
+  "sqlmodel==0.0.34",
+  "psycopg2==2.9.11",
+  "cryptography==46.0.5",
+  "httpx==0.28.1",
+  "python-dotenv==1.2.1",
+  "flatten-dict==0.4.2",
+  "pyjwt==2.11.0",
+  "jwcrypto==1.5.6",
+  "pyhanko-certvalidator==0.29.1",
+  "wtforms==3.2.1",
+  "starlette-wtf==0.4.5",
+  "aiocache==0.12.3",
+  "sortedcontainers==2.4.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/icedevml/tinypki"
+Issues = "https://github.com/icedevml/tinypki/issues"
+Repository = "https://github.com/icedevml/tinypki.git"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]

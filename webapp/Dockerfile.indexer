@@ -1,7 +1,7 @@
 FROM python:3.14.3-alpine3.23
 RUN apk add build-base libpq libpq-dev
 WORKDIR /
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+COPY ./pyproject.toml /app/pyproject.toml
+RUN pip install /app
 COPY ./ /app
 CMD ["python", "-u", "-m", "app.indexer"]
