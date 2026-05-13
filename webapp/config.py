@@ -12,6 +12,24 @@ load_dotenv(dotenv_path=os.path.join(base, "../env/tinypki.env"))
 load_dotenv(dotenv_path=os.path.join(base, "../env/caddy.env"))
 
 
+class _NoArg:
+    """A sentinel value to indicate that a parameter was not given"""
+
+
+NO_ARG = _NoArg()
+
+
+def get_env_var(key: str, default: str | _NoArg = NO_ARG) -> str:
+    """Get an environment variable, raise an error if it is missing and no default is given."""
+    try:
+        return os.environ[key]
+    except KeyError:
+        if isinstance(default, _NoArg):
+            raise ValueError(f"Environment variable {key} is missing")
+
+        return default
+
+
 def parse_list(var_name):
     data = os.environ[var_name]
 
@@ -38,6 +56,11 @@ POSTGRES_USER = os.environ["POSTGRES_USER"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 PG_HOST = os.environ["PG_HOST"]
 PG_PORT = int(os.environ["PG_PORT"])
+
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{PG_HOST}:{PG_PORT}/tinypki"
+)
+SQLALCHEMY_ECHO = get_env_var("SQLALCHEMY_ECHO", "") == "true"
 
 ATREST_ENCRYPTION_KEY = os.environ["ATREST_ENCRYPTION_KEY"]
 SESSION_MIDDLEWARE_KEY = os.environ["SESSION_MIDDLEWARE_KEY"]

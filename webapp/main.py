@@ -1,5 +1,4 @@
 import base64
-from contextlib import asynccontextmanager
 from datetime import datetime
 from datetime import timezone, timedelta
 from urllib.parse import unquote
@@ -10,8 +9,6 @@ from cryptography.x509 import load_pem_x509_certificate
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlmodel import SQLModel
 from sqlmodel import Session
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse, RedirectResponse
@@ -29,35 +26,7 @@ from .routers import public_api_proxy, public_api_redeem, api_x509, ui_invitatio
 from .stepapi.client_validator import validate_client_cert
 
 
-@asynccontextmanager
-async def app_lifespan(_app: FastAPI):
-    def create_sync_state():
-        SQLModel.metadata.create_all(engine)
-
-        with Session(engine) as session:
-            stmt = pg_insert(TinySystemMetadata).values(
-                key="sync_state",
-                value={}
-            ).on_conflict_do_nothing(index_elements=['key'])
-
-            session.exec(stmt)
-            session.commit()
-
-    def close_psycopg():
-        import gc
-        import psycopg_pool
-        [obj.close() for obj in gc.get_objects() if isinstance(obj, psycopg_pool.ConnectionPool)]
-
-    # before app
-    create_sync_state()
-
-    yield
-
-    # after app
-    close_psycopg()
-
-
-app = FastAPI(docs_url="/public/docs", lifespan=app_lifespan)
+app = FastAPI(docs_url="/public/docs")
 
 
 @app.exception_handler(TinyPKIError)

@@ -21,6 +21,7 @@ dependencies = [
   "starlette-wtf==0.4.5",
   "aiocache==0.12.3",
   "sortedcontainers==2.4.0",
+  "alembic==1.18.4",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

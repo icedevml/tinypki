@@ -4,5 +4,4 @@ WORKDIR /app
 COPY ./pyproject.toml /app/pyproject.toml
 RUN pip install .
 COPY ./ /app
-CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "8080"]
-
+CMD [ "/app/runtime/entrypoint.sh" ]
