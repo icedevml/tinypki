@@ -39,7 +39,7 @@ class InvitationCreateRequest(BaseModel):
 
 class InvitationCreateResponse(BaseModel):
     id: int
-    subject_common_name: str
+    subject_common_name: Optional[str]
     subject_alt_names: list[str]
     redeem_code: str
     expires_at: str
@@ -50,7 +50,7 @@ class InvitationOut(BaseModel):
 
     blueprint_name: str = Field(...)
 
-    subject_common_name: str = Field(...)
+    subject_common_name: Optional[str] = Field(...)
     subject_alt_names: List[str] = Field(...)
     not_after_days: int = Field(...)
 
@@ -120,13 +120,13 @@ async def api_create_invitation(
         case SubjectMode.SIMPLE_EMAIL:
             if not body.req_simple_email:
                 raise HTTPException(422, "req_simple_email is required for SIMPLE_EMAIL subject_mode")
-            cn = body.req_simple_email.name
+            cn = None
             sans = [f"email:{body.req_simple_email.name}"]
 
         case SubjectMode.DEFAULT:
             if not body.req_default:
                 raise HTTPException(422, "req_default is required for DEFAULT subject_mode")
-            cn = body.req_default.subject_common_name
+            cn = None
             sans = body.req_default.subject_alt_names
 
         case _:

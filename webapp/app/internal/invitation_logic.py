@@ -1,6 +1,8 @@
 import datetime
+from typing import Optional
 
 import psycopg2
+from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlmodel import Session, delete, and_, or_
 
@@ -16,7 +18,7 @@ async def create_invitation(
         session: Session,
         blueprint: TinyBlueprint,
         not_after_days: int,
-        cn: str,
+        cn: Optional[str],
         sans: list[str],
 ) -> tuple[TinyInvitation, str]:
     """
@@ -83,7 +85,7 @@ async def delete_invitation(
     await get_deletable_invitation(session, invitation_id)
 
     session.exec(
-        delete(TinyInvitation)
+        update(TinyInvitation)
         .where(
             and_(
                 TinyInvitation.id == invitation_id,
@@ -93,5 +95,6 @@ async def delete_invitation(
                 )
             )
         )
+        .values(status=InvitationStatus.DELETED)
     )
     session.commit()

@@ -66,8 +66,14 @@ window.addEventListener("load", () => {
         const alg = parseKeyAlgorithm(FRONTEND_CFG.clientSideFlowConfig.keyAlgorithm);
         const keys = await crypto.subtle.generateKey(alg, true, ["sign", "verify"]);
         const privKeyDERB64 = await TinyPKICSR.exportKeyDERB64(keys.privateKey);
+
+        const subjectName =
+            FRONTEND_CFG.clientSideFlowConfig.cn
+                ? [{"CN": [FRONTEND_CFG.clientSideFlowConfig.cn]}]
+                : [];
+
         const csrPEM = await TinyPKICSR.generateCSR({
-            subjectName: [{"CN": [FRONTEND_CFG.clientSideFlowConfig.cn]}],
+            subjectName: subjectName,
             subjectAltNames: FRONTEND_CFG.clientSideFlowConfig.sans,
             keys: keys,
             algorithm: alg,

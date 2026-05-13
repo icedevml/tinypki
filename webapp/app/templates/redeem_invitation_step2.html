@@ -11,7 +11,11 @@
         <tr>
             <th>Subject name</th>
             <td>
-                <code>{{ invitation.subject_common_name }}</code>
+                {% if invitation.subject_common_name %}
+                    {{ invitation.subject_common_name }}
+                {% else %}
+                    <span>—</span>
+                {% endif %}
             </td>
         </tr>
         <tr>

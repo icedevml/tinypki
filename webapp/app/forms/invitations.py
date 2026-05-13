@@ -30,7 +30,7 @@ class SimpleDNSSANAddInvitationForm(BaseAddInvitationForm):
     )
 
     def assemble_subject_cn(self):
-        return self.subject_name.data
+        return None
 
     def assemble_sans(self):
         return [f"dns:{self.subject_name.data}"]
@@ -44,7 +44,7 @@ class SimpleEmailSANAddInvitationForm(BaseAddInvitationForm):
     )
 
     def assemble_subject_cn(self):
-        return self.subject_name.data
+        return None
 
     def assemble_sans(self):
         return [f"email:{self.subject_name.data}"]

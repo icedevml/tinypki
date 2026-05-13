@@ -41,7 +41,7 @@ class RedeemInitRequirements(BaseModel):
         "curve": "P-256",
         "hash_algorithm": "SHA-256"
     }])
-    cn: str = Field(examples=["janusz@example.com"])
+    cn: Optional[str] = Field(examples=["janusz@example.com"])
     sans: list[str] = Field(examples=[["email:janusz@example.com"]])
 
 

@@ -45,7 +45,11 @@
         <tr>
             <td>{{ o.id }}</td>
             <td>
-                {{ o.subject_common_name }}
+                {% if o.subject_common_name %}
+                    {{ o.subject_common_name }}
+                {% else %}
+                    <span>—</span>
+                {% endif %}
             </td>
             <td>
                 {% if o.subject_alt_names %}
@@ -61,6 +65,8 @@
                 <span class="badge text-bg-warning">Locked</span>
                 {% elif o.status.name == "EXCEPTION" %}
                 <span class="badge text-bg-danger" title="{{ o.error_message }}">Exception</span>
+                {% elif o.status.name == "DELETED" %}
+                <span class="badge text-bg-warning">Deleted</span>
                 {% elif o.status.name == "ISSUED" %}
                 <span class="badge text-bg-success">Issued</span>
                 {% else %}

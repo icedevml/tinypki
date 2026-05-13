@@ -40,6 +40,7 @@ class InvitationStatus(EnumWithCoerce):
     LOCKED = "LOCKED"
     EXCEPTION = "EXCEPTION"
     ISSUED = "ISSUED"
+    DELETED = "DELETED"
 
 
 class TinySystemMetadata(SQLModel, table=True):
@@ -75,7 +76,7 @@ class TinyInvitation(SQLModel, table=True):
     redeem_code_hash: str = Field(unique=True)
     blueprint_name: str = Field(index=True, foreign_key="tinyblueprint.name")
 
-    subject_common_name: str = Field(index=True)
+    subject_common_name: Optional[str] = Field(index=True, nullable=True)
     subject_alt_names: List[str] = Field(sa_column=Column(ARRAY(String), index=True), default_factory=lambda: [])
     template_data: dict = Field(default_factory=dict, sa_column=Column(JSON))
     not_after_days: int = Field()

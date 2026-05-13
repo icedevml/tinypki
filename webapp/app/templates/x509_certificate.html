@@ -18,7 +18,13 @@
     </tr>
     <tr>
         <th>Subject's X.509 Name</th>
-        <td class="mono">{{ cert.subject_name }}</td>
+        <td class="mono">
+            {% if cert.subject_name %}
+                {{ cert.subject_name }}
+            {% else %}
+                <span>—</span>
+            {% endif %}
+        </td>
     </tr>
     <tr>
         <th>Subject alternative names (SAN)</th>

@@ -122,8 +122,8 @@ async def route_ui_invitations_delete(
     invitation = await get_deletable_invitation(session, invitation_id)
 
     form = await DeleteInvitationForm.from_formdata(request)
-    form.name.label.text = f"Type '{invitation.subject_common_name}' to confirm"
-    form.name.validators = [DataRequired(), AnyOf([invitation.subject_common_name])]
+    form.name.label.text = f"Type '{invitation.subject_alt_names[0]}' to confirm"
+    form.name.validators = [DataRequired(), AnyOf([invitation.subject_alt_names[0]])]
 
     if await form.validate_on_submit():
         await delete_invitation(session, invitation_id)

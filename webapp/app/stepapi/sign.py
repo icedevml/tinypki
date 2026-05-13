@@ -1,5 +1,6 @@
 import uuid
 from datetime import timezone, datetime, timedelta
+from typing import Optional
 
 import httpx
 import jwt
@@ -22,7 +23,7 @@ class StepSignError(RuntimeError):
 
 
 class CSR:
-    def __init__(self, cn: str, sans: list):
+    def __init__(self, cn: Optional[str], sans: list):
         self.cn = cn
         self.sans = sans
 
@@ -30,7 +31,7 @@ class CSR:
         self.private_key = None
 
     @staticmethod
-    def from_pem(data: str, *, required_cn: str, required_sans: list[str], required_key_algorithm: str):
+    def from_pem(data: str, *, required_cn: Optional[str], required_sans: list[str], required_key_algorithm: str):
         obj = load_pem_x509_csr(data.encode("ascii"))
 
         # verify whether the CSR conforms with the key spec
@@ -40,15 +41,22 @@ class CSR:
         # extract CN/SANS
         cn_arr = obj.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
 
-        if not cn_arr or len(cn_arr) != 1 or not cn_arr[0].value:
-            raise InvalidCSR("Expected a single Subject Common Name attribute with a non-empty value.")
+        if required_cn is not None:
+            if not cn_arr or len(cn_arr) != 1 or not cn_arr[0].value:
+                raise InvalidCSR("Expected a single Subject Common Name attribute with a non-empty value.")
 
-        cn = cn_arr[0].value
+            cn = cn_arr[0].value
+
+            # verify CN/SANS match with what we expect
+            if required_cn != cn:
+                raise InvalidCSR("The CSR doesn't contain the expected Common Name.")
+        else:
+            if cn_arr:
+                raise InvalidCSR("Expected empty Subject (with no values at all).")
+
+            cn = None
+
         sans = unmap_sans(obj)
-
-        # verify CN/SANS match with what we expect
-        if not required_cn or required_cn != cn:
-            raise InvalidCSR("The CSR doesn't contain the expected Common Name.")
 
         if set(required_sans) != set(sans):
             raise InvalidCSR("The CSR doesn't contain the expected set of Subject Alternative Names.")
@@ -64,10 +72,18 @@ class CSR:
     def generate(self, key_spec: KeySpec):
         private_key = key_spec.generate_private_key()
 
-        pyca_csr = x509.CertificateSigningRequestBuilder(
-        ).subject_name(
-            x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, self.cn)])
-        ).add_extension(
+        builder = x509.CertificateSigningRequestBuilder()
+
+        if self.cn:
+            builder = builder.subject_name(
+                x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, self.cn)])
+            )
+        else:
+            builder = builder.subject_name(
+                x509.Name([])
+            )
+
+        pyca_csr = builder.add_extension(
             x509.SubjectAlternativeName(
                 [map_san(san) for san in self.sans]
             ),
@@ -92,7 +108,7 @@ async def sign_cert(
         *,
         provisioner: dict,
         csr_pem: str,
-        cn: str,
+        cn: Optional[str],
         sans: list[str],
         not_before: str,
         not_after: str,
@@ -104,7 +120,7 @@ async def sign_cert(
         raise RuntimeError("Refusing to issue certificate. Subject Common Name is on the "
                            "TINYPKI_DISALLOWED_NAMES list.")
 
-    if any((san in TINYPKI_DISALLOWED_NAMES) for san in sans_vals):
+    if any((san_val in TINYPKI_DISALLOWED_NAMES) for san_val in sans_vals):
         raise RuntimeError("Refusing to issue certificate. Some subject alternative names "
                            "are on the TINYPKI_DISALLOWED_NAMES list.")
 
