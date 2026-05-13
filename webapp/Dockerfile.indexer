@@ -3,9 +3,9 @@ RUN apk add build-base libpq libpq-dev
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /webapp
-COPY ./pyproject.toml /app/pyproject.toml
+COPY ./pyproject.toml /webapp/pyproject.toml
 
 RUN pip install /webapp
 COPY ./ /webapp
 
-CMD [ "python", "-u", "-m", "app.indexer" ]
+CMD [ "python", "-u", "indexer.py" ]
