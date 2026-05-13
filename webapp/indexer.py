@@ -189,7 +189,7 @@ def process_x509_cert(serial_dec_str, nvalue, initial_sync):
             key_usage=key_usage,
             ext_key_usage=ext_key_usage,
             issuer_name=cert.issuer.rfc4514_string(),
-            fingerprint_sha256=cert.fingerapp_logger.info(hashes.SHA256()).hex(),
+            fingerprint_sha256=cert.fingerprint(hashes.SHA256()).hex(),
             time_not_before=cert.not_valid_before_utc.replace(tzinfo=timezone.utc),
             time_not_after=cert.not_valid_after_utc.replace(tzinfo=timezone.utc),
             cert_pem=cert.public_bytes(Encoding.PEM).decode('ascii')
