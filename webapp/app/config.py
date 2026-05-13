@@ -8,9 +8,9 @@ from pydantic import TypeAdapter
 
 base = os.path.dirname(os.path.abspath(__file__))
 
-load_dotenv(dotenv_path=os.path.join(base, "../env/db.env"))
-load_dotenv(dotenv_path=os.path.join(base, "../env/tinypki.env"))
-load_dotenv(dotenv_path=os.path.join(base, "../env/caddy.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/db.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/tinypki.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/caddy.env"))
 
 
 class _NoArg:

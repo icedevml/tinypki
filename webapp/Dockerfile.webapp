@@ -1,7 +1,12 @@
 FROM python:3.14.3-alpine3.23
 RUN apk add build-base libpq libpq-dev
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
-COPY ./pyproject.toml /app/pyproject.toml
-RUN pip install .
+RUN mkdir -p /app/webapp
+COPY ./webapp/pyproject.toml /app/webpap/pyproject.toml
+
+RUN pip install /app/webapp
 COPY ./ /app
-CMD [ "/app/runtime/entrypoint.sh" ]
+
+CMD [ "/app/entrypoint.sh" ]
