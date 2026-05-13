@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from config import SQLALCHEMY_DATABASE_URL
+from app.config import SQLALCHEMY_DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from dbmodels.tinypki import *
+from app.dbmodels.tinypki import *  # noqa
 from sqlmodel import SQLModel
 target_metadata = SQLModel.metadata
 
