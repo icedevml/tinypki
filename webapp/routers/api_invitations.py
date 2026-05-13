@@ -13,11 +13,28 @@ from ..internal.exc import TinyPKIError
 router = APIRouter()
 
 
+class ReqSimpleDNS(BaseModel):
+    name: str
+
+
+class ReqSimpleEmail(BaseModel):
+    name: str
+
+
+class ReqDefault(BaseModel):
+    subject_common_name: str
+    subject_alt_names: list[str]
+
+
 class InvitationCreateRequest(BaseModel):
-    not_after_days: int
-    subject_name: str | None = None          # for SIMPLE_DNS / SIMPLE_EMAIL modes
-    subject_common_name: str | None = None   # for DEFAULT mode
-    subject_alt_names: list[str] | None = None  # for DEFAULT mode, e.g. ["dns:example.com"]
+    subject_mode: SubjectMode
+    req_simple_dns: ReqSimpleDNS | None = None
+    req_simple_email: ReqSimpleEmail | None = None
+    req_default: ReqDefault | None = None
+
+    not_after_days: Optional[int] = Field(
+        default=None, description="How many days the certificate will be valid after it's issued. "
+                                  "Will use blueprint's default value if null is provided here.")
 
 
 class InvitationCreateResponse(BaseModel):
@@ -85,31 +102,39 @@ async def api_create_invitation(
     except Exception:
         raise HTTPException(status_code=404, detail="Blueprint not found")
 
-    match blueprint.subject_mode:
+    if body.subject_mode != blueprint.subject_mode:
+        raise HTTPException(400, f"Blueprint '{blueprint_name}' requires subject_mode {blueprint.subject_mode.value}")
+
+    not_after_days = body.not_after_days
+
+    if not_after_days is None:
+        not_after_days = blueprint.not_after_days
+
+    match body.subject_mode:
         case SubjectMode.SIMPLE_DNS:
-            if not body.subject_name:
-                raise HTTPException(422, "subject_name required for SIMPLE_DNS blueprints")
-            cn = body.subject_name
-            sans = [f"dns:{body.subject_name}"]
+            if not body.req_simple_dns:
+                raise HTTPException(422, "req_simple_dns is required for SIMPLE_DNS subject_mode")
+            cn = body.req_simple_dns.name
+            sans = [f"dns:{body.req_simple_dns.name}"]
 
         case SubjectMode.SIMPLE_EMAIL:
-            if not body.subject_name:
-                raise HTTPException(422, "subject_name required for SIMPLE_EMAIL blueprints")
-            cn = body.subject_name
-            sans = [f"email:{body.subject_name}"]
+            if not body.req_simple_email:
+                raise HTTPException(422, "req_simple_email is required for SIMPLE_EMAIL subject_mode")
+            cn = body.req_simple_email.name
+            sans = [f"email:{body.req_simple_email.name}"]
 
         case SubjectMode.DEFAULT:
-            if not body.subject_common_name or not body.subject_alt_names:
-                raise HTTPException(422, "subject_common_name and subject_alt_names required for DEFAULT blueprints")
-            cn = body.subject_common_name
-            sans = body.subject_alt_names
+            if not body.req_default:
+                raise HTTPException(422, "req_default is required for DEFAULT subject_mode")
+            cn = body.req_default.subject_common_name
+            sans = body.req_default.subject_alt_names
 
         case _:
             raise HTTPException(500, "Unsupported subject_mode")
 
     try:
         invitation, redeem_code = await create_invitation(
-            session, blueprint, body.not_after_days, cn, sans
+            session, blueprint, not_after_days, cn, sans
         )
     except TinyPKIError as e:
         raise HTTPException(status_code=e.status_code, detail=e.reason.value)
