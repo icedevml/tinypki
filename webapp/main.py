@@ -25,7 +25,7 @@ from .dependencies import templates, engine
 from .internal.cached_upstream import cached_upstream_request
 from .internal.exc import TinyPKIError, TinyPKIErrorReason
 from .routers import public_api_proxy, public_api_redeem, api_x509, ui_invitations, ui_provisioners, ui_x509, \
-    public_ui_redeem, ui_blueprints
+    public_ui_redeem, ui_blueprints, api_blueprints, api_invitations
 from .stepapi.client_validator import validate_client_cert
 
 
@@ -220,6 +220,8 @@ app.include_router(public_ui_redeem.router)
 
 # API for authenticated users
 app.include_router(api_x509.router)
+app.include_router(api_blueprints.router)
+app.include_router(api_invitations.router)
 
 # UI for authenticated users
 app.include_router(ui_blueprints.router)

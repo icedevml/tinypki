@@ -1,26 +1,19 @@
-import base64
 import datetime
-import os
 from dataclasses import dataclass
 from typing import Type
 
-import psycopg2
 from fastapi import APIRouter, Request, Depends
-from sqlalchemy import delete
-from sqlalchemy.exc import IntegrityError, NoResultFound
-from sqlmodel import Session, select, or_, and_
+from sqlmodel import Session, select
 from starlette.responses import HTMLResponse, RedirectResponse
 from starlette_wtf import csrf_protect
 from wtforms.validators import DataRequired, AnyOf
 
-from ..dbmodels.tinypki import TinyInvitation, TinyBlueprint, SubjectMode, InvitationStatus
+from ..dbmodels.tinypki import TinyInvitation, TinyBlueprint, SubjectMode
 from ..dependencies import get_session, templates
 from ..forms.invitations import SimpleDNSSANAddInvitationForm, BaseAddInvitationForm, DefaultAddInvitationForm, \
     SimpleEmailSANAddInvitationForm, DeleteInvitationForm
-from ..internal.duration import parse_go_duration
-from ..internal.exc import TinyPKIErrorReason, TinyPKIError
-from ..internal.redeem_helpers import make_redeem_code, hash_redeem_code
-from ..stepapi.provisioner import get_provisioner_record
+from ..internal.invitation_logic import create_invitation, delete_invitation, get_deletable_invitation
+from ..internal.util import make_submit_nonce
 
 router = APIRouter()
 
@@ -74,48 +67,13 @@ def route_ui_list_invitations(
     )
 
 
-async def _process_invitation_add(request: Request, session: Session, blueprint: Type[TinyBlueprint],
-                            form: BaseAddInvitationForm):
-    redeem_code = make_redeem_code()
-    redeem_code_hash = hash_redeem_code(redeem_code)
-
+async def _process_invitation_add(request, session, blueprint, form):
     cn = form.assemble_subject_cn()
     sans = form.assemble_sans()
 
-    expires_at = datetime.datetime.now(datetime.timezone.utc) \
-                 + datetime.timedelta(days=blueprint.invitation_validity_days)
-
-    provisioner = await get_provisioner_record(blueprint.provisioner_name)
-
-    if not provisioner:
-        raise TinyPKIError(404, TinyPKIErrorReason.NO_SUCH_JWK_PROVISIONER)
-
-    max_cert_duration_s = parse_go_duration(
-        provisioner.get("claims", {}).get("maxTLSCertDuration", "24h"))
-
-    if max_cert_duration_s < form.not_after_days.data * 24 * 60 * 60:
-        raise TinyPKIError(400, TinyPKIErrorReason.UNACCEPTABLE_CERT_DURATION)
-
-    obj = TinyInvitation(
-        blueprint_name=blueprint.name,
-        submit_nonce=form.submit_nonce.data,
-        redeem_code_hash=redeem_code_hash,
-        subject_common_name=cn,
-        subject_alt_names=sans,
-        not_after_days=form.not_after_days.data,
-        expires_at=expires_at,
-        status=InvitationStatus.CREATED,
-        serial_no=None
+    invitation, redeem_code = await create_invitation(
+        session, blueprint, form.not_after_days.data, cn, sans
     )
-
-    try:
-        session.add(obj)
-        session.commit()
-    except IntegrityError as e:
-        if isinstance(e.orig, psycopg2.errors.UniqueViolation):
-            raise TinyPKIError(400, TinyPKIErrorReason.INVITATION_ALREADY_CREATED)
-        else:
-            raise e
 
     return templates.TemplateResponse(
         "invitation_added.html",
@@ -123,7 +81,7 @@ async def _process_invitation_add(request: Request, session: Session, blueprint:
             "request": request,
             "subject_common_name": cn,
             "subject_alt_names": sans,
-            "redeem_code": redeem_code,
+            "redeem_code": redeem_code
         }
     )
 
@@ -135,7 +93,7 @@ async def route_ui_invitation_add(
         request: Request,
         session: Session = Depends(get_session)
 ):
-    submit_nonce = base64.urlsafe_b64encode(os.urandom(16)).decode("ascii").replace("=", "")
+    submit_nonce = make_submit_nonce()
     blueprint = session.get_one(TinyBlueprint, blueprint_name)
     form = await map_subject_mode_to_form(request, blueprint)
 
@@ -161,33 +119,14 @@ async def route_ui_invitations_delete(
         request: Request,
         session: Session = Depends(get_session)
 ):
-    try:
-        invitation = session.get_one(TinyInvitation, invitation_id)
-    except NoResultFound:
-        raise TinyPKIError(404, TinyPKIErrorReason.OBJECT_NOT_FOUND)
-
-    if invitation.status != InvitationStatus.CREATED and invitation.status != InvitationStatus.OPENED:
-        raise TinyPKIError(400, TinyPKIErrorReason.UNABLE_TO_DELETE_RESOURCE_HAS_DEPENDENCIES)
+    invitation = await get_deletable_invitation(session, invitation_id)
 
     form = await DeleteInvitationForm.from_formdata(request)
     form.name.label.text = f"Type '{invitation.subject_common_name}' to confirm"
     form.name.validators = [DataRequired(), AnyOf([invitation.subject_common_name])]
 
     if await form.validate_on_submit():
-        session.exec(
-            delete(TinyInvitation)
-            .where(
-                and_(
-                    TinyInvitation.id == invitation_id,
-                    TinyInvitation.subject_common_name == form.name.data,
-                    or_(
-                        TinyInvitation.status == InvitationStatus.CREATED,
-                        TinyInvitation.status == InvitationStatus.OPENED
-                    )
-                )
-            ))
-        session.commit()
-
+        await delete_invitation(session, invitation_id)
         return RedirectResponse("/ui/invitations", status_code=302)
 
     return templates.TemplateResponse(
