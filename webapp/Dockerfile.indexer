@@ -1,7 +1,11 @@
 FROM python:3.14.3-alpine3.23
 RUN apk add build-base libpq libpq-dev
-WORKDIR /
-COPY ./pyproject.toml /app/pyproject.toml
-RUN pip install /app
-COPY ./ /app
-CMD ["python", "-u", "-m", "app.indexer"]
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /webapp
+COPY ./pyproject.toml /webapp/pyproject.toml
+
+RUN pip install /webapp
+COPY ./ /webapp
+
+CMD [ "python", "-u", "indexer.py" ]

@@ -4,12 +4,35 @@ import os
 import re
 
 from dotenv import load_dotenv
+from pydantic import TypeAdapter
 
 base = os.path.dirname(os.path.abspath(__file__))
 
-load_dotenv(dotenv_path=os.path.join(base, "../env/db.env"))
-load_dotenv(dotenv_path=os.path.join(base, "../env/tinypki.env"))
-load_dotenv(dotenv_path=os.path.join(base, "../env/caddy.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/db.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/tinypki.env"))
+load_dotenv(dotenv_path=os.path.join(base, "../../env/caddy.env"))
+
+
+class _NoArg:
+    """A sentinel value to indicate that a parameter was not given"""
+
+
+NO_ARG = _NoArg()
+
+
+def get_env_var(key: str, default: str | _NoArg = NO_ARG) -> str:
+    """Get an environment variable, raise an error if it is missing and no default is given."""
+    try:
+        return os.environ[key]
+    except KeyError:
+        if isinstance(default, _NoArg):
+            raise ValueError(f"Environment variable {key} is missing")
+
+        return default
+
+
+def strtobool(val: str) -> bool:
+    return TypeAdapter(bool).validate_python(val)
 
 
 def parse_list(var_name):
@@ -34,10 +57,23 @@ def parse_fingerprint(var_name):
                      f"should be a 64 character hexadecimal string.")
 
 
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+LOG_JSON_FORMAT = strtobool(os.environ.get("LOG_JSON_FORMAT", "false"))
+LOG_NAME = "tinypki.app_logs"
+LOG_NAME_INDEXER = "tinypki.indexer_logs"
+LOG_NAME_REINDEX = "tinypki.reindex_logs"
+LOG_ACCESS_NAME = "tinypki.access_logs"
+LOG_INCLUDE_STACK = True
+
 POSTGRES_USER = os.environ["POSTGRES_USER"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 PG_HOST = os.environ["PG_HOST"]
 PG_PORT = int(os.environ["PG_PORT"])
+
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{PG_HOST}:{PG_PORT}/tinypki"
+)
+SQLALCHEMY_ECHO = get_env_var("SQLALCHEMY_ECHO", "") == "true"
 
 ATREST_ENCRYPTION_KEY = os.environ["ATREST_ENCRYPTION_KEY"]
 SESSION_MIDDLEWARE_KEY = os.environ["SESSION_MIDDLEWARE_KEY"]

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -27,14 +27,14 @@ class KeygenFlow(EnumWithCoerce):
 
 class SubjectMode(EnumWithCoerce):
     # user is asked to provide the CN and DNS SANS when creating an invitation
-    DEFAULT = "DEFAULT",
+    DEFAULT = "DEFAULT"
     # only one SAN DNS is allowed and it's automatically copied to CN
-    SIMPLE_DNS = "SIMPLE_DNS",
+    SIMPLE_DNS = "SIMPLE_DNS"
     # the same but with email
-    SIMPLE_EMAIL = "SIMPLE_EMAIL",
+    SIMPLE_EMAIL = "SIMPLE_EMAIL"
 
 
-class InvitationStatus(Enum):
+class InvitationStatus(EnumWithCoerce):
     CREATED = "CREATED"
     OPENED = "OPENED"
     LOCKED = "LOCKED"
@@ -69,7 +69,7 @@ class TinyBlueprint(SQLModel, table=True):
 
 
 class TinyInvitation(SQLModel, table=True):
-    id: Optional[int] = Field(sa_column=Column(Integer, primary_key=True, autoincrement=True))
+    id: int = Field(sa_column=Column(Integer, primary_key=True, autoincrement=True))
     submit_nonce: str = Field(unique=True)
 
     redeem_code_hash: str = Field(unique=True)
@@ -85,7 +85,7 @@ class TinyInvitation(SQLModel, table=True):
     expires_at: datetime = Field()
 
     serial_no: Optional[str] = Field(unique=True, nullable=True, default=None)
-    keygen_flow: KeygenFlow = Field(nullable=True)
+    keygen_flow: Optional[KeygenFlow] = Field(nullable=True)
     error_message: Optional[str] = Field(nullable=True, default=None)
 
     blueprint: Optional["TinyBlueprint"] = Relationship()

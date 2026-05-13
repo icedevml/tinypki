@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 import httpx
+import structlog
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives._serialization import Encoding
@@ -14,15 +15,20 @@ from pgmq import PGMQueue, Message
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
-from .internal.san_utils import unmap_sans
-from .config import POSTGRES_PASSWORD, POSTGRES_USER, TINYPKI_STEP_CA_URL, PG_HOST, PG_PORT
-from .dbmodels.stepca import X509Certificate, X509CertificateRevocation, X509CertificateData, ACMECert, ACMEAccount
-from .dbmodels.tinypki import TinySystemMetadata
-from .dependencies import engine
+from app.config import POSTGRES_PASSWORD, POSTGRES_USER, TINYPKI_STEP_CA_URL, PG_HOST, PG_PORT, LOG_JSON_FORMAT, \
+    LOG_LEVEL, LOG_NAME_INDEXER
+from app.custom_logger import setup_logging
+from app.dbmodels.stepca import X509Certificate, X509CertificateRevocation, X509CertificateData, ACMECert, ACMEAccount
+from app.dbmodels.tinypki import TinySystemMetadata
+from app.dependencies import engine
+from app.internal.san_utils import unmap_sans
+
+setup_logging(json_logs=LOG_JSON_FORMAT, log_level=LOG_LEVEL)
+app_logger = structlog.stdlib.get_logger(LOG_NAME_INDEXER)
 
 
 def check_stepca_healthy():
-    print("[!] Waiting for Step CA to become healthy...")
+    app_logger.info("Waiting for Step CA to become healthy...")
 
     for _ in range(100):
         try:
@@ -30,7 +36,7 @@ def check_stepca_healthy():
             res.raise_for_status()
             break
         except httpx.HTTPError as e:
-            print("[!] Failed to connect to stepca. " + e.__class__.__name__ + ": " + str(e))
+            app_logger.warn("Failed to connect to stepca. " + e.__class__.__name__ + ": " + str(e))
             pass
 
         time.sleep(1.0)
@@ -262,7 +268,7 @@ def process_revoked_x509_cert(serial_dec_str, nvalue):
 
 
 def run():
-    print("[!] Starting indexer...")
+    app_logger.info("Starting indexer...")
     initial_sync = True
 
     while True:
@@ -292,7 +298,8 @@ def run():
 
         if oldest_msg and oldest_msg > 60:
             update_state({"state": "unhealthy"})
-            print(f"[!] Unhealthy state, can't keep up with the message flow!")
+            app_logger.warn(f"Unhealthy state, can't keep up with the message flow!",
+                            oldest_msg_age_sec=oldest_msg)
         else:
             update_state({"state": "healthy"})
 
@@ -301,12 +308,12 @@ def run():
         if initial_sync or len(read_messages) > 0:
             initial_sync = False
 
-            print(f"[!] Synchronized {len(read_messages)} objects.")
+            app_logger.info(f"Synchronized objects.", synced_objects=len(read_messages))
 
             if metrics.queue_length == 0:
-                print(f"[!] Sync OK.")
+                app_logger.info(f"Sync OK. Queue is empty.")
             elif metrics.queue_length > 0:
-                print(f"[!] Sync in progress. Queue length: {metrics.queue_length}")
+                app_logger.info(f"Sync in progress...", queue_length=metrics.queue_length)
 
 
 if __name__ == "__main__":
