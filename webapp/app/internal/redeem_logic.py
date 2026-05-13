@@ -5,7 +5,9 @@ import traceback
 from typing import Optional
 
 from cryptography import x509
+from fastapi import HTTPException
 from jwcrypto import jwt
+from jwcrypto.common import JWException
 from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select, and_, or_
@@ -17,6 +19,7 @@ from .redeem_helpers import hash_redeem_code
 from ..dbmodels.tinypki import TinyInvitation, KeygenFlow, InvitationStatus
 from ..internal.atrest_key import create_atrest_jwk
 from ..internal.issue_pkcs12 import issue_pkcs12
+from ..middleware import app_logger
 from ..stepapi.sign import sign_cert, CSR
 
 
@@ -48,7 +51,13 @@ def decrypt_invitation_jwk_provisioner(invitation: TinyInvitation):
         raise TinyPKIError(status_code=500, reason=TinyPKIErrorReason.NO_SUCH_JWK_PROVISIONER)
 
     token = jwt.JWT(algs=["A256GCMKW", "A256GCM"], check_claims={"aud": "stored-jwk-provisioner"})
-    token.deserialize(invitation.blueprint.jwk_provisioner.provisioner_jwe, key=create_atrest_jwk())
+
+    try:
+        token.deserialize(invitation.blueprint.jwk_provisioner.provisioner_jwe, key=create_atrest_jwk())
+    except JWException:
+        app_logger.exception("Failed to decode JWT.")
+        raise HTTPException(401, "Invalid token.")
+
     return json.loads(token.claims)["provisioner"]
 
 
@@ -83,7 +92,8 @@ async def do_redeem_code(
         session.exec(
             update(TinyInvitation)
             .where(TinyInvitation.redeem_code_hash == invitation.redeem_code_hash)
-            .values(status=InvitationStatus.ISSUED, serial_no=str(cert.serial_number), keygen_flow=KeygenFlow.SERVER_SIDE)
+            .values(status=InvitationStatus.ISSUED, serial_no=str(cert.serial_number),
+                    keygen_flow=KeygenFlow.SERVER_SIDE)
         )
         session.commit()
 

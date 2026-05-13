@@ -3,13 +3,16 @@ import json
 import httpx
 import jwcrypto.jwa
 from aiocache import cached
+from fastapi import HTTPException
 from jwcrypto import jwe
+from jwcrypto.common import JWException
 from jwcrypto.jwk import JWK
 
 from .ca_fingerprint import get_step_ca_verify
 from ..config import TINYPKI_STEP_CA_URL, PUBLIC_PROXY_CACHE_INTERVAL
 from ..internal.duration import parse_go_duration
 from ..internal.exc import ProvisionerNotFound
+from ..middleware import app_logger
 
 # Step CA wrapped JWK tokens use 60k PBKDF2 iterations by default
 jwcrypto.jwa.default_max_pbkdf2_iterations = 600000
@@ -17,7 +20,13 @@ jwcrypto.jwa.default_max_pbkdf2_iterations = 600000
 
 def decrypt_jwk(token: str, password: str) -> dict:
     jwetoken = jwe.JWE()
-    jwetoken.deserialize(token, key=JWK.from_password(password))
+
+    try:
+        jwetoken.deserialize(token, key=JWK.from_password(password))
+    except JWException:
+        app_logger.exception("Failed to decode JWT.")
+        raise HTTPException(401, "Invalid token.")
+
     return json.loads(jwetoken.payload)
 
 
@@ -68,4 +77,4 @@ async def get_provisioner_max_days(provisioner_name: str) -> int:
 
     max_duration_str = provisioner.get("claims", {}).get("maxTLSCertDuration", "24h")
     max_duration_f = parse_go_duration(max_duration_str)
-    return int(max_duration_f) // (60*60*24)
+    return int(max_duration_f) // (60 * 60 * 24)

@@ -4,8 +4,9 @@ from typing import List, Optional
 
 from cryptography import x509
 from cryptography.hazmat.primitives._serialization import Encoding
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from jwcrypto import jwt
+from jwcrypto.common import JWException
 from pydantic import BaseModel, Field
 from sqlalchemy import update
 from sqlmodel import Session
@@ -19,6 +20,7 @@ from ..internal.key_spec import KeySpec
 from ..internal.redeem_helpers import make_pkcs12_password
 from ..internal.redeem_logic import lock_invitation, decrypt_invitation_jwk_provisioner, \
     create_api_redeem_token, find_invitation, do_redeem_code
+from ..middleware import app_logger
 from ..stepapi.sign import sign_cert, CSR
 
 router = APIRouter()
@@ -35,9 +37,9 @@ class RedeemInitRequirements(BaseModel):
     keygen_flow: str = Field(examples=["CLIENT_SIDE", "SERVER_SIDE"])
     key_algorithm: str = Field(examples=["ECDSA/P-256/SHA-256"])
     key_spec: dict = Field(examples=[{
-      "algorithm": "ECDSA",
-      "curve": "P-256",
-      "hash_algorithm": "SHA-256"
+        "algorithm": "ECDSA",
+        "curve": "P-256",
+        "hash_algorithm": "SHA-256"
     }])
     cn: str = Field(examples=["janusz@example.com"])
     sans: list[str] = Field(examples=[["email:janusz@example.com"]])
@@ -60,7 +62,8 @@ class RedeemWithCSRRequestData(BaseModel):
         description="Token received from the /public/api/redeem/init endpoint."
     )
     csr: str = Field(
-        examples=["-----BEGIN CERTIFICATE REQUEST-----\nMIIBGTCBwAIBADAWMRQwEgYDVQQDEwtleGFtcGxlLmNvbTBZMBMGByqGSM49AgEG\nCCqGSM49AwEHA0IABJba9F4FeJJE78mwwy3BfKCFZ4t7vaHgwnBP855qrsLL9Dh1\nAaMb/6WjGeDCKyEHY3cE205xIwF4LqB8VTFcl1OgSDBGBgkqhkiG9w0BCQ4xOTA3\nMAsGA1UdDwQEAwIFoDAoBgNVHREEITAfgRB0ZXN0QGV4YW1wbGUuY29tggtleGFt\ncGxlLmNvbTAKBggqhkjOPQQDAgNIADBFAiBbRgdMbyrSP3a2x2rvLgZR6W8Vg8k5\nakcLh+bM6QESwAIhANZd7ROg81pkaUQWjeRgsmLHpo53PHe+flDIp+ir5D1t\n-----END CERTIFICATE REQUEST-----"],
+        examples=[
+            "-----BEGIN CERTIFICATE REQUEST-----\nMIIBGTCBwAIBADAWMRQwEgYDVQQDEwtleGFtcGxlLmNvbTBZMBMGByqGSM49AgEG\nCCqGSM49AwEHA0IABJba9F4FeJJE78mwwy3BfKCFZ4t7vaHgwnBP855qrsLL9Dh1\nAaMb/6WjGeDCKyEHY3cE205xIwF4LqB8VTFcl1OgSDBGBgkqhkiG9w0BCQ4xOTA3\nMAsGA1UdDwQEAwIFoDAoBgNVHREEITAfgRB0ZXN0QGV4YW1wbGUuY29tggtleGFt\ncGxlLmNvbTAKBggqhkjOPQQDAgNIADBFAiBbRgdMbyrSP3a2x2rvLgZR6W8Vg8k5\nakcLh+bM6QESwAIhANZd7ROg81pkaUQWjeRgsmLHpo53PHe+flDIp+ir5D1t\n-----END CERTIFICATE REQUEST-----"],
         description="PKCS#10 Certificate Signing Request (CSR) conformant with the requirements specified by the server."
     )
 
@@ -135,7 +138,13 @@ async def route_public_api_redeem_client_side(
     key = create_atrest_jwk()
 
     token = jwt.JWT(algs=["A256GCMKW", "A256GCM"], check_claims={"aud": "invite-redeem-client-side"})
-    token.deserialize(data.token, key=key)
+
+    try:
+        token.deserialize(data.token, key=key)
+    except JWException:
+        app_logger.exception("Failed to decode JWT.")
+        raise HTTPException(401, "Invalid token.")
+
     claims = json.loads(token.claims)
 
     their_redeem_code_hash = claims["redeem_code_hash"]
@@ -217,7 +226,13 @@ async def route_public_api_redeem_server_side(
     key = create_atrest_jwk()
 
     token = jwt.JWT(algs=["A256GCMKW", "A256GCM"], check_claims={"aud": "invite-redeem-server-side"})
-    token.deserialize(data.token, key=key)
+
+    try:
+        token.deserialize(data.token, key=key)
+    except JWException:
+        app_logger.exception("Failed to decode JWT.")
+        raise HTTPException(401, "Invalid token.")
+
     claims = json.loads(token.claims)
 
     their_redeem_code_hash = claims["redeem_code_hash"]
