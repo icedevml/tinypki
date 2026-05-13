@@ -189,7 +189,7 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-app.mount("/public/static", StaticFiles(directory="static"), name="static")
+app.mount("/public/static", StaticFiles(directory="app/static"), name="static")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

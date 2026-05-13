@@ -13,7 +13,7 @@ def get_session():
         yield session
 
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="app/templates")
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
