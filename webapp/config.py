@@ -4,6 +4,7 @@ import os
 import re
 
 from dotenv import load_dotenv
+from pydantic import TypeAdapter
 
 base = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,6 +31,10 @@ def get_env_var(key: str, default: str | _NoArg = NO_ARG) -> str:
         return default
 
 
+def strtobool(val: str) -> bool:
+    return TypeAdapter(bool).validate_python(val)
+
+
 def parse_list(var_name):
     data = os.environ[var_name]
 
@@ -51,6 +56,14 @@ def parse_fingerprint(var_name):
     raise ValueError(f"Incorrect value in {var_name}. The fingerprint should either be left empty or"
                      f"should be a 64 character hexadecimal string.")
 
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+LOG_JSON_FORMAT = strtobool(os.environ.get("LOG_JSON_FORMAT", "false"))
+LOG_NAME = "tinypki.app_logs"
+LOG_NAME_INDEXER = "tinypki.indexer_logs"
+LOG_NAME_REINDEX = "tinypki.reindex_logs"
+LOG_ACCESS_NAME = "tinypki.access_logs"
+LOG_INCLUDE_STACK = True
 
 POSTGRES_USER = os.environ["POSTGRES_USER"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]

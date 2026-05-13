@@ -1,13 +1,18 @@
 import atexit
 import binascii
 
+import structlog
 from cryptography import x509
 from pgmq import PGMQueue
 from sqlalchemy import URL, create_engine, text
 from sqlmodel import Session
 from sortedcontainers import SortedSet
 
-from .config import POSTGRES_PASSWORD, POSTGRES_USER, PG_HOST, PG_PORT
+from .custom_logger import setup_logging
+from .config import POSTGRES_PASSWORD, POSTGRES_USER, PG_HOST, PG_PORT, LOG_JSON_FORMAT, LOG_LEVEL, LOG_NAME_REINDEX
+
+setup_logging(json_logs=LOG_JSON_FORMAT, log_level=LOG_LEVEL)
+app_logger = structlog.stdlib.get_logger(LOG_NAME_REINDEX)
 
 queue = PGMQueue(
     host=PG_HOST,
@@ -53,12 +58,12 @@ def process_rows(session: Session, table: str, batch_size: int, callback):
             callback(row, table)
             i += 1
 
-        print(f"[!] Processed {offset + i} rows in {table}...")
+        app_logger.info(f"[!] Processed {offset + i} rows in {table}...")
         offset += batch_size
 
 
 def run():
-    print("[!] Starting reindex...")
+    app_logger.info("[!] Starting reindex...")
 
     x509_cert_order = SortedSet()
 
@@ -81,10 +86,10 @@ def run():
     with Session(engine_stepca) as session:
         session.execute(text("LOCK TABLE " + (", ".join(TABLES)) + " IN SHARE MODE"))
 
-        print("[!] Figuring out the chronological insertion order for x509_certs")
+        app_logger.info("[!] Figuring out the chronological insertion order for x509_certs")
         process_rows(session, "x509_certs", BATCH_SIZE, callback=add_cert_order)
 
-        print("[!] Processing x509_certs")
+        app_logger.info("[!] Processing x509_certs")
         i = 0
         for nbf, serial_no in x509_cert_order:
             row = session.execute(
@@ -95,9 +100,9 @@ def run():
             i += 1
 
             if i % BATCH_SIZE == 0:
-                print(f"[!] Processed {i} rows in x509_certs...")
+                app_logger.info(f"[!] Processed {i} rows in x509_certs...")
 
-        print("[!] Processing the remaining data")
+        app_logger.info("[!] Processing the remaining data")
         for table in TABLES - {"x509_certs"}:
             process_rows(session, table, BATCH_SIZE, callback=queue_row)
 

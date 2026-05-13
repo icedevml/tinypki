@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from enum import Enum
 
 import httpx
+import structlog
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives._serialization import Encoding
@@ -14,15 +15,21 @@ from pgmq import PGMQueue, Message
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import Session, select
 
+from .custom_logger import setup_logging
 from .internal.san_utils import unmap_sans
-from .config import POSTGRES_PASSWORD, POSTGRES_USER, TINYPKI_STEP_CA_URL, PG_HOST, PG_PORT
+from .config import POSTGRES_PASSWORD, POSTGRES_USER, TINYPKI_STEP_CA_URL, PG_HOST, PG_PORT, LOG_JSON_FORMAT, LOG_LEVEL, \
+    LOG_NAME_INDEXER
 from .dbmodels.stepca import X509Certificate, X509CertificateRevocation, X509CertificateData, ACMECert, ACMEAccount
 from .dbmodels.tinypki import TinySystemMetadata
 from .dependencies import engine
 
 
+setup_logging(json_logs=LOG_JSON_FORMAT, log_level=LOG_LEVEL)
+app_logger = structlog.stdlib.get_logger(LOG_NAME_INDEXER)
+
+
 def check_stepca_healthy():
-    print("[!] Waiting for Step CA to become healthy...")
+    app_logger.info("[!] Waiting for Step CA to become healthy...")
 
     for _ in range(100):
         try:
@@ -30,7 +37,7 @@ def check_stepca_healthy():
             res.raise_for_status()
             break
         except httpx.HTTPError as e:
-            print("[!] Failed to connect to stepca. " + e.__class__.__name__ + ": " + str(e))
+            app_logger.info("[!] Failed to connect to stepca. " + e.__class__.__name__ + ": " + str(e))
             pass
 
         time.sleep(1.0)
@@ -183,7 +190,7 @@ def process_x509_cert(serial_dec_str, nvalue, initial_sync):
             key_usage=key_usage,
             ext_key_usage=ext_key_usage,
             issuer_name=cert.issuer.rfc4514_string(),
-            fingerprint_sha256=cert.fingerprint(hashes.SHA256()).hex(),
+            fingerprint_sha256=cert.fingerapp_logger.info(hashes.SHA256()).hex(),
             time_not_before=cert.not_valid_before_utc.replace(tzinfo=timezone.utc),
             time_not_after=cert.not_valid_after_utc.replace(tzinfo=timezone.utc),
             cert_pem=cert.public_bytes(Encoding.PEM).decode('ascii')
@@ -262,7 +269,7 @@ def process_revoked_x509_cert(serial_dec_str, nvalue):
 
 
 def run():
-    print("[!] Starting indexer...")
+    app_logger.info("[!] Starting indexer...")
     initial_sync = True
 
     while True:
@@ -292,7 +299,7 @@ def run():
 
         if oldest_msg and oldest_msg > 60:
             update_state({"state": "unhealthy"})
-            print(f"[!] Unhealthy state, can't keep up with the message flow!")
+            app_logger.info(f"[!] Unhealthy state, can't keep up with the message flow!")
         else:
             update_state({"state": "healthy"})
 
@@ -301,12 +308,12 @@ def run():
         if initial_sync or len(read_messages) > 0:
             initial_sync = False
 
-            print(f"[!] Synchronized {len(read_messages)} objects.")
+            app_logger.info(f"[!] Synchronized {len(read_messages)} objects.")
 
             if metrics.queue_length == 0:
-                print(f"[!] Sync OK.")
+                app_logger.info(f"[!] Sync OK.")
             elif metrics.queue_length > 0:
-                print(f"[!] Sync in progress. Queue length: {metrics.queue_length}")
+                app_logger.info(f"[!] Sync in progress. Queue length: {metrics.queue_length}")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,12 @@
 import base64
+from contextlib import asynccontextmanager
 from datetime import datetime
 from datetime import timezone, timedelta
 from urllib.parse import unquote
 
+import structlog
 from aiocache import cached
+from asgi_correlation_id import CorrelationIdMiddleware
 from cryptography.hazmat.primitives._serialization import Encoding
 from cryptography.x509 import load_pem_x509_certificate
 from fastapi import FastAPI, Request
@@ -14,7 +17,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette_wtf import CSRFProtectMiddleware
 
-from .config import PROXY_AUTH_TOKEN, CLIENT_CERT_REVALIDATE_INTERVAL
+from .middleware import StructLogMiddleware, app_logger
+from .custom_logger import setup_logging
+from .config import PROXY_AUTH_TOKEN, CLIENT_CERT_REVALIDATE_INTERVAL, LOG_JSON_FORMAT, LOG_LEVEL
 from .config import TINYPKI_ALLOW_CERTS, SESSION_MIDDLEWARE_KEY, CSRF_PROTECT_MIDDLEWARE_KEY, \
     UNSAFE_OVERRIDE_CLIENT_CN
 from .dbmodels.tinypki import TinySystemMetadata
@@ -26,7 +31,31 @@ from .routers import public_api_proxy, public_api_redeem, api_x509, ui_invitatio
 from .stepapi.client_validator import validate_client_cert
 
 
-app = FastAPI(docs_url="/public/docs")
+setup_logging(json_logs=LOG_JSON_FORMAT, log_level=LOG_LEVEL)
+
+
+@asynccontextmanager
+async def app_lifespan(_app: FastAPI):
+    yield
+
+    # after app
+    def close_psycopg():
+        import gc
+        import psycopg_pool
+        [obj.close() for obj in gc.get_objects() if isinstance(obj, psycopg_pool.ConnectionPool)]
+
+    close_psycopg()
+
+
+app = FastAPI(
+    title="TinyPKI",
+    description="Live index of all X.509 Certificates in Step CA queryable via GUI and API, easy human onboarding with in-browser CSR generation.",
+    version="0.2.0",
+    docs_url="/public/docs",
+    lifespan=app_lifespan,
+)
+app.add_middleware(StructLogMiddleware)
+app.add_middleware(CorrelationIdMiddleware)
 
 
 @app.exception_handler(TinyPKIError)
@@ -36,7 +65,8 @@ async def tinypkierror_exception_handler(request: Request, exc: TinyPKIError):
 
 @cached(ttl=CLIENT_CERT_REVALIDATE_INTERVAL)
 async def get_forwarded_client_cert(x_client_cert: str):
-    print('[!] Revalidating forwarded client certificate...')
+    app_logger.info('[!] Revalidating forwarded client certificate...')
+
     if not x_client_cert or not x_client_cert.strip():
         # empty or all-whitespace character
         return None
@@ -113,7 +143,7 @@ async def check_client_cert(request: Request, call_next):
         request.state.is_debug = True
         request.state.auth_client_cert = dict(UNSAFE_OVERRIDE_CLIENT_CN)
 
-    print("[!] Client cert", request.state.auth_client_cert)
+    app_logger.info("Client cert", client_cert=request.state.auth_client_cert)
 
     if request.state.auth_client_cert:
         cn = request.state.auth_client_cert["Common Name"]
