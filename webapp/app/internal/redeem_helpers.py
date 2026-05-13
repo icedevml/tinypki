@@ -17,7 +17,7 @@ def _secure_random_segment(length: int):
     return ''.join(random.SystemRandom().choice(cdkey_digits + cdkey_letters) for _ in range(length))
 
 
-# generate a 4x4 cd-key alike redeem code (total domain: 29^16 ~= 77 bits of security)
+# generate a 4x5 cd-key alike redeem code (total domain: 29^20 ~= 97 bits of security)
 # should be fairly reasonable to protect against online brute force, especially when also involving rate limits
 def make_redeem_code() -> str:
     return '-'.join([_secure_random_segment(4) for _ in range(5)])
